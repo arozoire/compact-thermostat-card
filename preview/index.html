@@ -83,7 +83,8 @@ const S = {
   'climate.bioclimatica': { state: 'off', attributes: { friendly_name: 'Bioclimatica', hvac_modes: ['off', 'heat', 'cool', 'dry'], hvac_action: 'off', current_temperature: 22.1, temperature: 23, target_temp_step: 1, min_temp: 17, max_temp: 30, supported_features: 385 } },
   'climate.ma_piece': { state: 'heat', attributes: { friendly_name: 'Ma pièce', hvac_modes: ['auto', 'heat', 'off'], preset_modes: ['away', 'boost', 'Frost Guard', 'Schedule'], preset_mode: 'Schedule', hvac_action: 'idle', current_temperature: 20.2, temperature: 19.5, target_temp_step: 0.5, min_temp: 7, max_temp: 30, supported_features: 401 } },
   'climate.studio': { state: 'heat_cool', attributes: { friendly_name: 'Studio', hvac_modes: ['off', 'heat_cool', 'heat', 'cool'], hvac_action: 'idle', current_temperature: 22.6, temperature: null, target_temp_low: 20, target_temp_high: 24, target_temp_step: 0.5, min_temp: 16, max_temp: 30, supported_features: 386 } },
-  'climate.altherma_leaving_water_temperature': { state: 'unavailable', attributes: { friendly_name: 'Altherma' } },
+  'climate.altherma_leaving_water_temperature': { state: 'heat', attributes: { friendly_name: 'Altherma', hvac_modes: ['heat', 'off'], current_temperature: 35, temperature: 30, target_temp_step: 1, min_temp: 25, max_temp: 55, supported_features: 385 } },
+  'climate.cantina': { state: 'unavailable', attributes: { friendly_name: 'Cantina' } },
   'sensor.temp_soggiorno': { state: '25.8', attributes: { unit_of_measurement: '°C' } },
 };
 for (const [id, s] of Object.entries(S)) s.entity_id = id;
@@ -138,7 +139,8 @@ const CONFIGS = [
   { type: 'custom:compact-thermostat-card', title: 'Altri', entities: [
     { entity: 'climate.ma_piece' },
     { entity: 'climate.studio', name: 'Studio (heat_cool)' },
-    { entity: 'climate.altherma_leaving_water_temperature', icon: 'mdi:radiator' },
+    { entity: 'climate.altherma_leaving_water_temperature', icon: 'mdi:heat-pump' },
+    { entity: 'climate.cantina', icon: 'mdi:radiator' },
   ] },
   { type: 'custom:compact-thermostat-card', compact: true, show_mode_button: false, entities: [
     { entity: 'climate.riscaldamento_pavimento', name: 'Pavimento', icon: 'mdi:heating-coil' },

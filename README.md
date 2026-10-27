@@ -21,8 +21,11 @@ Si capisce lo stato a colpo d'occhio come nella card termostato nativa, ma occup
   parte 1,5 s dopo l'ultimo tocco; nel frattempo il valore è evidenziato con una barra di attesa.
 - **Pulsante modo**: colore e icona del modo attuale; al tocco apre il menu con gli `hvac_modes` e, se l'entità li
   supporta, i preset. Mentre HA applica il cambio, un anello gira attorno al pulsante.
-- **Barra orizzontale**: pallino grande = setpoint, pallino piccolo = temperatura attuale, tratto pieno tra i due
-  quando l'impianto sta lavorando. **Il pallino del setpoint si trascina** (mouse o dito) oppure si tocca un punto della
+- **Barra orizzontale**: pallino pieno = setpoint, pallino cerchiato = temperatura attuale, tratto pieno tra i due
+  quando l'impianto sta lavorando.
+- **Oltre il setpoint**: in riscaldamento con temperatura sopra il setpoint (o in raffrescamento sotto), di più di
+  mezzo step, il tratto tra i due pallini diventa tratteggiato, il pallino attuale diventa arancione e accanto alla
+  temperatura compare lo scarto (es. `+5,0°`). In `heat_cool` vale quando si esce dall'intervallo minimo–massimo. **Il pallino del setpoint si trascina** (mouse o dito) oppure si tocca un punto della
   barra; durante il trascinamento una bolla mostra il valore.
 - Entità in `heat_cool` con `target_temp_low` / `target_temp_high`: due pallini (arancione = minimo, blu = massimo).
   Si trascina quello più vicino; con − / + si regola quello selezionato (tocca il valore per sceglierlo).

@@ -57,6 +57,7 @@ interface RowModel {
   barMax: number;
   pending?: PendingSetpoint;
   modePending?: PendingMode;
+  offset?: { ref: number; delta: number };
 }
 
 const near = (a: number | undefined, b: number | undefined) =>
@@ -266,7 +267,30 @@ export class CompactThermostatCard extends LitElement {
       barMax,
       pending,
       modePending,
+      offset: unavailable ? undefined : this._offset(mode, current, target, low, high, dual, num(a.target_temp_step) ?? 0.5),
     };
+  }
+
+  private _offset(
+    mode: string,
+    current: number | undefined,
+    target: number | undefined,
+    low: number | undefined,
+    high: number | undefined,
+    dual: boolean,
+    step: number,
+  ): RowModel['offset'] {
+    if (current === undefined) return undefined;
+    const tol = step / 2;
+    if (dual && low !== undefined && high !== undefined) {
+      if (current > high + tol) return { ref: high, delta: current - high };
+      if (current < low - tol) return { ref: low, delta: current - low };
+      return undefined;
+    }
+    if (target === undefined) return undefined;
+    if (mode === 'heat' && current > target + tol) return { ref: target, delta: current - target };
+    if (mode === 'cool' && current < target - tol) return { ref: target, delta: current - target };
+    return undefined;
   }
 
   private _keyFor(m: RowModel): SetpointKey {
@@ -439,7 +463,11 @@ export class CompactThermostatCard extends LitElement {
             <span>${this._statusLabel(m)}</span>
           </div>
         </div>
-        <div class="cur">${current}<sup>${this._unit}</sup></div>
+        <div class="cur">
+          ${current}<sup>${this._unit}</sup>${m.offset
+            ? html`<span class="delta">${m.offset.delta > 0 ? '+' : '−'}${this._fmt(Math.abs(m.offset.delta), 1)}°</span>`
+            : nothing}
+        </div>
         ${this._renderSetpoint(m)} ${showMode ? this._renderModeButton(m, shownMode, last) : nothing}
         ${this._renderBar(m)}
       </div>
@@ -546,18 +574,21 @@ export class CompactThermostatCard extends LitElement {
     const working = !!m.action && WORKING_ACTIONS.has(m.action);
     const parts: unknown[] = [];
     if (!m.unavailable) {
-      if (m.dual) {
-        parts.push(span(m.low!, m.high!, 'range'));
+      if (m.dual) parts.push(span(m.low!, m.high!, 'range'));
+      if (m.offset && m.current !== undefined) {
+        parts.push(span(m.offset.ref, m.current, 'over'));
+      } else if (m.dual) {
         if (working && m.current !== undefined) parts.push(span(m.action === 'cooling' ? m.high! : m.low!, m.current, 'fill'));
       } else if (working && m.current !== undefined && m.target !== undefined) {
         parts.push(span(m.target, m.current, 'fill'));
       }
-      if (m.current !== undefined) parts.push(html`<div class="dot c" style=${styleMap({ left: pct(m.current) })}></div>`);
       if (m.dual) {
         parts.push(dot('target_temp_low', m.low!, MODE_COLORS.heat), dot('target_temp_high', m.high!, MODE_COLORS.cool));
       } else if (m.target !== undefined) {
         parts.push(dot('temperature', m.target));
       }
+      if (m.current !== undefined)
+        parts.push(html`<div class=${classMap({ dot: true, c: true, off: !!m.offset })} style=${styleMap({ left: pct(m.current) })}></div>`);
       if (dragKey) {
         const v = dragKey === 'target_temp_low' ? m.low! : dragKey === 'target_temp_high' ? m.high! : m.target!;
         parts.push(html`<div class="bubble" style=${styleMap({ left: pct(v) })}>${this._fmt(v, digits)}°</div>`);
@@ -592,6 +623,7 @@ export class CompactThermostatCard extends LitElement {
   static override styles = css`
     :host {
       --ctc-disabled: var(--state-inactive-color, var(--disabled-color, #bdbdbd));
+      --ctc-warning: var(--warning-color, #ffa600);
     }
     ha-card {
       height: 100%;
@@ -925,7 +957,8 @@ export class CompactThermostatCard extends LitElement {
     }
     .track,
     .fill,
-    .range {
+    .range,
+    .over {
       position: absolute;
       top: 50%;
       height: 6px;
@@ -971,10 +1004,30 @@ export class CompactThermostatCard extends LitElement {
       background: var(--ctc-disabled);
     }
     .dot.c {
-      width: 8px;
-      height: 8px;
-      background: var(--primary-text-color);
+      width: 12px;
+      height: 12px;
+      box-sizing: border-box;
+      border: 3px solid var(--primary-text-color);
+      background: var(--card-background-color, var(--ha-card-background, #fff));
       box-shadow: 0 0 0 2px var(--card-background-color, var(--ha-card-background, #fff));
+    }
+    .dot.c.off {
+      border-color: var(--ctc-warning);
+    }
+    .over {
+      background: repeating-linear-gradient(135deg, var(--row-color) 0 3px, transparent 3px 6px);
+    }
+    .delta {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0;
+      vertical-align: 5px;
+      color: color-mix(in srgb, var(--ctc-warning) 65%, var(--primary-text-color));
+      background: color-mix(in srgb, var(--ctc-warning) 18%, transparent);
     }
     .bubble {
       position: absolute;
@@ -1019,6 +1072,11 @@ export class CompactThermostatCard extends LitElement {
       .cur,
       .compact .cur {
         font-size: 20px;
+      }
+      .delta {
+        margin-left: 3px;
+        padding: 0 4px;
+        font-size: 11px;
       }
       .pm {
         width: 28px;
