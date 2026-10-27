@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run check
+
+      - name: dist aggiornato
+        run: |
+          if ! git diff --quiet -- dist; then
+            echo "::error::dist/compact-thermostat-card.js non corrisponde al sorgente: esegui 'npm run build' e committa dist/"
+            git diff --stat -- dist
+            exit 1
+          fi
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: plugin
+          ignore: brands topics description

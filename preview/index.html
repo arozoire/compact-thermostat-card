@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="it" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compact Thermostat Preview</title>
+<style>
+:root, [data-theme="light"] {
+  --primary-background-color: #e6e9ef;
+  --card-background-color: #eff1f5;
+  --ha-card-background: #eff1f5;
+  --primary-text-color: #4c4f69;
+  --secondary-text-color: #6c6f85;
+  --disabled-color: #9ca0b0;
+  --state-inactive-color: #9ca0b0;
+  --divider-color: #ccd0da;
+  --primary-color: #8839ef;
+  --text-primary-color: #eff1f5;
+  --state-climate-heat-color: #fe640b;
+  --state-climate-cool-color: #1e66f5;
+  --state-climate-dry-color: #df8e1d;
+  --state-climate-heat_cool-color: #179299;
+  --state-climate-auto-color: #40a02b;
+  --state-climate-fan_only-color: #04a5e5;
+}
+[data-theme="dark"] {
+  --primary-background-color: #11111b;
+  --card-background-color: #1e1e2e;
+  --ha-card-background: #1e1e2e;
+  --primary-text-color: #cdd6f4;
+  --secondary-text-color: #a6adc8;
+  --disabled-color: #6c7086;
+  --state-inactive-color: #6c7086;
+  --divider-color: #313244;
+  --primary-color: #cba6f7;
+  --text-primary-color: #1e1e2e;
+  --state-climate-heat-color: #fab387;
+  --state-climate-cool-color: #89b4fa;
+  --state-climate-dry-color: #f9e2af;
+  --state-climate-heat_cool-color: #94e2d5;
+  --state-climate-auto-color: #a6e3a1;
+  --state-climate-fan_only-color: #89dceb;
+}
+body { margin: 0; padding: 16px; background: var(--primary-background-color); color: var(--primary-text-color); font-family: Roboto, "Segoe UI", system-ui, sans-serif; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-bottom: 16px; font-size: 13px; }
+.bar button { font: inherit; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--divider-color); background: none; color: inherit; cursor: pointer; }
+.col { display: flex; flex-direction: column; gap: 8px; width: min(var(--w, 500px), 100%); }
+#log { margin-top: 16px; font: 12px ui-monospace, Consolas, monospace; color: var(--secondary-text-color); white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button id="theme">Tema chiaro/scuro</button>
+  <label>Larghezza colonna <input type="range" id="w" min="320" max="760" value="500"> <span id="wv">500 px</span></label>
+</div>
+<div class="col" id="col"></div>
+<div id="log"></div>
+
+<script type="module">
+import * as mdi from '../node_modules/@mdi/js/mdi.js';
+
+customElements.define('ha-card', class extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' }).innerHTML =
+      '<style>:host{display:block;background:var(--ha-card-background);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.3)}</style><slot></slot>';
+  }
+});
+customElements.define('ha-icon', class extends HTMLElement {
+  set icon(v) { this._icon = v; this.render(); }
+  get icon() { return this._icon; }
+  connectedCallback() { this.render(); }
+  render() {
+    const name = 'mdi' + String(this._icon || '').replace('mdi:', '').split('-').map(p => p[0].toUpperCase() + p.slice(1)).join('');
+    const path = mdi[name] || mdi.mdiHelpCircleOutline;
+    this.innerHTML = `<svg viewBox="0 0 24 24" style="width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);display:block;fill:currentColor"><path d="${path}"/></svg>`;
+  }
+});
+
+const S = {
+  'climate.riscaldamento_pavimento': { state: 'heat', attributes: { friendly_name: 'Riscaldamento pavimento', hvac_modes: ['heat', 'off'], preset_modes: ['none', 'comfort', 'sleep', 'away'], preset_mode: 'comfort', hvac_action: 'heating', current_temperature: 19.4, temperature: 21, target_temp_step: 0.5, min_temp: 7, max_temp: 35, supported_features: 401 } },
+  'climate.ac_19621004': { state: 'cool', attributes: { friendly_name: 'AC 19621004', hvac_modes: ['off', 'heat', 'cool', 'dry'], hvac_action: 'cooling', current_temperature: 26.3, temperature: 24, target_temp_step: 1, min_temp: 17, max_temp: 30, supported_features: 385 } },
+  'climate.bioclimatica': { state: 'off', attributes: { friendly_name: 'Bioclimatica', hvac_modes: ['off', 'heat', 'cool', 'dry'], hvac_action: 'off', current_temperature: 22.1, temperature: 23, target_temp_step: 1, min_temp: 17, max_temp: 30, supported_features: 385 } },
+  'climate.ma_piece': { state: 'heat', attributes: { friendly_name: 'Ma pièce', hvac_modes: ['auto', 'heat', 'off'], preset_modes: ['away', 'boost', 'Frost Guard', 'Schedule'], preset_mode: 'Schedule', hvac_action: 'idle', current_temperature: 20.2, temperature: 19.5, target_temp_step: 0.5, min_temp: 7, max_temp: 30, supported_features: 401 } },
+  'climate.studio': { state: 'heat_cool', attributes: { friendly_name: 'Studio', hvac_modes: ['off', 'heat_cool', 'heat', 'cool'], hvac_action: 'idle', current_temperature: 22.6, temperature: null, target_temp_low: 20, target_temp_high: 24, target_temp_step: 0.5, min_temp: 16, max_temp: 30, supported_features: 386 } },
+  'climate.altherma_leaving_water_temperature': { state: 'unavailable', attributes: { friendly_name: 'Altherma' } },
+  'sensor.temp_soggiorno': { state: '25.8', attributes: { unit_of_measurement: '°C' } },
+};
+for (const [id, s] of Object.entries(S)) s.entity_id = id;
+
+const log = t => { document.getElementById('log').textContent = t + '\n' + document.getElementById('log').textContent; };
+
+function action(s) {
+  const a = s.attributes;
+  if (s.state === 'off') return 'off';
+  if (s.state === 'heat') return a.temperature > a.current_temperature + .2 ? 'heating' : 'idle';
+  if (s.state === 'cool') return a.temperature < a.current_temperature - .2 ? 'cooling' : 'idle';
+  if (s.state === 'dry') return 'drying';
+  if (s.state === 'heat_cool') return a.current_temperature < a.target_temp_low ? 'heating' : a.current_temperature > a.target_temp_high ? 'cooling' : 'idle';
+  return 'idle';
+}
+
+let hass;
+function publish() {
+  hass = {
+    states: Object.fromEntries(Object.entries(S).map(([k, v]) => [k, { ...v, attributes: { ...v.attributes } }])),
+    locale: { language: 'it' },
+    language: 'it',
+    config: { unit_system: { temperature: '°C' } },
+    formatEntityState: (st, s) => s ?? st.state,
+    formatEntityAttributeValue: (st, attr, v) => String(v ?? st.attributes[attr]),
+    callService(domain, service, data) {
+      log(`${domain}.${service} ${JSON.stringify(data)}`);
+      setTimeout(() => {
+        const s = S[data.entity_id];
+        if (service === 'set_temperature') Object.assign(s.attributes, Object.fromEntries(Object.entries(data).filter(([k]) => k !== 'entity_id')));
+        if (service === 'set_hvac_mode') {
+          s.state = data.hvac_mode;
+          if (s.state === 'heat_cool' && s.attributes.target_temp_low == null) Object.assign(s.attributes, { target_temp_low: (s.attributes.temperature ?? 21) - 2, target_temp_high: (s.attributes.temperature ?? 21) + 2, temperature: null });
+          if (s.state !== 'heat_cool' && s.attributes.temperature == null) s.attributes.temperature = s.attributes.target_temp_low;
+        }
+        if (service === 'set_preset_mode') s.attributes.preset_mode = data.preset_mode;
+        s.attributes.hvac_action = action(s);
+        publish();
+      }, 800);
+      return Promise.resolve();
+    },
+  };
+  document.querySelectorAll('compact-thermostat-card').forEach(c => { c.hass = hass; });
+}
+
+const CONFIGS = [
+  { type: 'custom:compact-thermostat-card', title: 'Riscaldamento', entities: [
+    { entity: 'climate.riscaldamento_pavimento', name: 'Pavimento', icon: 'mdi:heating-coil', bar_min: 15, bar_max: 28 },
+    { entity: 'climate.ac_19621004', name: 'Soggiorno AC', icon: 'mdi:air-conditioner', current_sensor: 'sensor.temp_soggiorno' },
+    { entity: 'climate.bioclimatica', icon: 'mdi:air-conditioner' },
+  ] },
+  { type: 'custom:compact-thermostat-card', title: 'Altri', entities: [
+    { entity: 'climate.ma_piece' },
+    { entity: 'climate.studio', name: 'Studio (heat_cool)' },
+    { entity: 'climate.altherma_leaving_water_temperature', icon: 'mdi:radiator' },
+  ] },
+  { type: 'custom:compact-thermostat-card', compact: true, show_mode_button: false, entities: [
+    { entity: 'climate.riscaldamento_pavimento', name: 'Pavimento', icon: 'mdi:heating-coil' },
+    { entity: 'climate.ac_19621004', name: 'Soggiorno AC', icon: 'mdi:air-conditioner' },
+  ] },
+];
+
+const params = new URLSearchParams(location.search);
+if (params.has('shot')) {
+  document.querySelector('.bar').remove();
+  document.getElementById('log').style.display = 'none';
+  document.documentElement.dataset.theme = params.get('theme') || 'dark';
+}
+
+await import('../dist/compact-thermostat-card.js');
+publish();
+for (const cfg of CONFIGS) {
+  const el = document.createElement('compact-thermostat-card');
+  el.setConfig(cfg);
+  el.hass = hass;
+  document.getElementById('col').append(el);
+  log(`grid ${JSON.stringify(el.getGridOptions())} size ${el.getCardSize()}`);
+}
+
+document.getElementById('theme').onclick = () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+const w = document.getElementById('w');
+w.oninput = () => { document.getElementById('col').style.setProperty('--w', w.value + 'px'); document.getElementById('wv').textContent = w.value + ' px'; };
+</script>
+</body>
+</html>

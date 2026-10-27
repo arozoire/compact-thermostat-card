@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="it" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compact Thermostat Mockup</title>
+<style>
+:root, [data-theme="light"] {
+  --page-bg: #e6e9ef;
+  --card-background-color: #eff1f5;
+  --primary-text-color: #4c4f69;
+  --secondary-text-color: #6c6f85;
+  --disabled-color: #9ca0b0;
+  --divider-color: #ccd0da;
+  --primary-color: #8839ef;
+  --state-climate-heat-color: #fe640b;
+  --state-climate-cool-color: #1e66f5;
+  --state-climate-dry-color: #df8e1d;
+  --state-climate-heat_cool-color: #179299;
+  --state-climate-auto-color: #40a02b;
+  --state-climate-fan_only-color: #04a5e5;
+  --shadow: 0 1px 3px rgba(76,79,105,.18);
+}
+[data-theme="dark"] {
+  --page-bg: #11111b;
+  --card-background-color: #1e1e2e;
+  --primary-text-color: #cdd6f4;
+  --secondary-text-color: #a6adc8;
+  --disabled-color: #6c7086;
+  --divider-color: #313244;
+  --primary-color: #cba6f7;
+  --state-climate-heat-color: #fab387;
+  --state-climate-cool-color: #89b4fa;
+  --state-climate-dry-color: #f9e2af;
+  --state-climate-heat_cool-color: #94e2d5;
+  --state-climate-auto-color: #a6e3a1;
+  --state-climate-fan_only-color: #89dceb;
+  --shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page-bg); color: var(--primary-text-color);
+  font-family: Roboto, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+}
+header {
+  display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+  padding: 16px; max-width: 1180px; margin: 0 auto;
+}
+header h1 { font-size: 18px; font-weight: 500; margin: 0 auto 0 0; }
+header h1 code { font-size: 15px; color: var(--primary-color); }
+.width { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--secondary-text-color); }
+.width input { accent-color: var(--primary-color); width: 160px; }
+.width output { min-width: 48px; font-variant-numeric: tabular-nums; color: var(--primary-text-color); }
+.toggle { display: flex; border: 1px solid var(--divider-color); border-radius: 999px; overflow: hidden; }
+.toggle button {
+  border: 0; background: none; color: var(--secondary-text-color); padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer;
+}
+.toggle button.on { background: var(--primary-color); color: var(--card-background-color); }
+.wrap {
+  display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;
+  max-width: 1180px; margin: 0 auto; padding: 0 16px 32px;
+}
+.dash { display: flex; flex-direction: column; gap: 8px; width: min(var(--w, 500px), 100%); flex: none; }
+aside { flex: 1 1 320px; min-width: 0; }
+
+.card { background: var(--card-background-color); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; container-type: inline-size; }
+.card h2 { margin: 0; padding: 12px 16px 2px; font-size: 16px; font-weight: 500; }
+
+.row {
+  display: grid; padding: 12px 12px 8px;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto 36px;
+  grid-template-areas: "icon info cur sp mode" "scale scale scale scale scale";
+  column-gap: 10px; row-gap: 4px; align-items: center;
+}
+.row + .row { border-top: 1px solid var(--divider-color); }
+.compact .row { padding: 8px 12px 4px; row-gap: 0; }
+.compact .status { display: none; }
+
+.ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.badge {
+  grid-area: icon; width: 40px; height: 40px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  display: grid; place-items: center; color: var(--row-color);
+  background: color-mix(in srgb, var(--row-color) 18%, transparent);
+}
+.compact .badge { width: 34px; height: 34px; }
+.compact .badge .ico { width: 18px; height: 18px; }
+
+.info { grid-area: info; min-width: 0; cursor: pointer; }
+.name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12.5px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; }
+.status .ico { width: 14px; height: 14px; color: var(--row-color); }
+
+.cur { grid-area: cur; font-size: 26px; line-height: 1; letter-spacing: -.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cur sup { font-size: 13px; color: var(--secondary-text-color); margin-left: 1px; }
+.compact .cur { font-size: 21px; }
+
+.scale { grid-area: scale; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; }
+.scale > span { flex: none; min-width: 22px; }
+.scale > span:last-child { text-align: right; }
+.bar { position: relative; flex: 1; height: 28px; cursor: pointer; touch-action: none; user-select: none; }
+.bar.locked { cursor: default; }
+.bar .track, .bar .fill, .bar .range { position: absolute; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; }
+.bar .track { left: 0; right: 0; background: var(--row-color); opacity: .22; }
+.bar .range { background: var(--secondary-text-color); opacity: .35; }
+.bar .fill { background: var(--row-color); }
+.bar .dot { position: absolute; top: 50%; border-radius: 50%; transform: translate(-50%, -50%); transition: width .12s, height .12s; }
+.bar .dot.t { width: 18px; height: 18px; background: var(--dot, var(--row-color)); box-shadow: 0 0 0 3px var(--card-background-color); }
+.bar .dot.t.active { width: 24px; height: 24px; box-shadow: 0 0 0 3px var(--card-background-color), 0 0 0 9px color-mix(in srgb, var(--dot, var(--row-color)) 25%, transparent); }
+.bar .dot.c { width: 8px; height: 8px; background: var(--primary-text-color); box-shadow: 0 0 0 2px var(--card-background-color); }
+.bar .bubble {
+  position: absolute; bottom: calc(100% + 4px); transform: translateX(-50%); padding: 2px 7px; border-radius: 6px;
+  background: var(--primary-color); color: var(--card-background-color); font-size: 12px; font-weight: 500; white-space: nowrap; pointer-events: none;
+}
+.locked .dot.t { background: var(--disabled-color); }
+
+.sp { grid-area: sp; display: flex; align-items: center; gap: 2px; }
+.sp button {
+  width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
+  background: color-mix(in srgb, var(--primary-text-color) 9%, transparent); color: var(--primary-text-color);
+  font-size: 18px; line-height: 1;
+}
+.sp button:disabled { opacity: .35; cursor: default; }
+.tv {
+  position: relative; min-width: 48px; text-align: center; font-size: 17px; font-weight: 500;
+  color: var(--row-color); font-variant-numeric: tabular-nums;
+}
+.tv.dim { color: var(--disabled-color); }
+.pending { color: var(--primary-color) !important; }
+.tv.pending::after {
+  content: ""; position: absolute; left: 6px; bottom: -5px; height: 2px; border-radius: 2px;
+  background: var(--primary-color); animation: deb 1.5s linear forwards;
+}
+.tv.holding::after { animation: none; width: 0; }
+@keyframes deb { from { width: 0; } to { width: calc(100% - 12px); } }
+.tv.dual { display: flex; flex-direction: column; gap: 1px; font-size: 14px; line-height: 1.15; }
+.tv.dual span { cursor: pointer; border-radius: 4px; padding: 0 3px; opacity: .55; }
+.tv.dual span.on { opacity: 1; background: color-mix(in srgb, var(--primary-text-color) 9%, transparent); }
+.tv.dual .lo { color: var(--state-climate-heat-color); }
+.tv.dual .hi { color: var(--state-climate-cool-color); }
+
+.mode {
+  grid-area: mode; position: relative; width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--mode-color) 18%, transparent); color: var(--mode-color);
+}
+.mode .ico { width: 19px; height: 19px; }
+.mode.pending { background: color-mix(in srgb, var(--primary-color) 14%, transparent); }
+.mode.pending::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%;
+  border: 2px solid transparent; border-top-color: var(--primary-color); border-right-color: var(--primary-color);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.unavailable { opacity: .5; }
+.unavailable .info, .unavailable .badge { cursor: default; }
+.unavailable button { cursor: not-allowed; }
+
+.menu {
+  position: fixed; z-index: 10; min-width: 200px; padding: 6px; border-radius: 12px;
+  background: var(--card-background-color); border: 1px solid var(--divider-color);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+.menu[hidden] { display: none; }
+.menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: 0; border-radius: 8px;
+  background: none; color: var(--primary-text-color); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.menu button:hover { background: color-mix(in srgb, var(--primary-text-color) 8%, transparent); }
+.menu button.on { background: color-mix(in srgb, var(--c) 16%, transparent); }
+.menu button .ico { color: var(--c); }
+.menu button .chk { margin-left: auto; color: var(--primary-text-color); width: 16px; height: 16px; }
+
+aside { font-size: 14px; line-height: 1.5; }
+aside h3 { font-size: 15px; font-weight: 500; margin: 0 0 6px; }
+aside section { background: var(--card-background-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+aside ol, aside ul { margin: 0; padding-left: 20px; }
+aside li + li { margin-top: 6px; }
+aside code { font-size: 12.5px; color: var(--primary-color); }
+.muted { color: var(--secondary-text-color); }
+#log { font-family: ui-monospace, Consolas, monospace; font-size: 12px; max-height: 180px; overflow: auto; color: var(--secondary-text-color); }
+#log div { padding: 3px 0; border-bottom: 1px dashed var(--divider-color); overflow-wrap: anywhere; }
+#log div:first-child { color: var(--primary-text-color); }
+
+@container (max-width: 420px) {
+  .row { column-gap: 6px; padding-left: 10px; padding-right: 8px; grid-template-columns: 34px minmax(0, 1fr) auto auto 32px; }
+  .badge, .compact .badge { width: 34px; height: 34px; }
+  .badge .ico { width: 18px; height: 18px; }
+  .cur, .compact .cur { font-size: 20px; }
+  .sp button { width: 28px; height: 28px; }
+  .tv { min-width: 42px; font-size: 15px; }
+  .mode { width: 32px; height: 32px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><code>compact-thermostat-card</code> · mockup v3</h1>
+  <label class="width">Simula colonna dashboard
+    <input type="range" id="w" min="340" max="760" step="10" value="500">
+    <output id="wv">500 px</output>
+  </label>
+  <div class="toggle" role="group" aria-label="Tema">
+    <button data-theme-set="light">Latte</button>
+    <button data-theme-set="dark" class="on">Mocha</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="dash" id="dash"></div>
+
+  <aside>
+    <section>
+      <h3>Cosa è cambiato</h3>
+      <ul>
+        <li><b>Righe più alte</b> (~92 px, compact ~70 px): sopra nome, stato, temperatura e controlli; sotto la <b>barra a tutta larghezza</b> con <code>min</code> / <code>max</code> ai lati.</li>
+        <li><b>Il pallino del setpoint si trascina</b> (mouse o dito): mentre lo sposti compare una bolla con il valore, che scatta sul <code>target_temp_step</code>. Si può anche toccare un punto qualsiasi della barra. Al rilascio parte la stessa barra di attesa di 1,5 s, poi la chiamata.</li>
+        <li><b>heat_cool</b>: si trascina il pallino più vicino (arancione = minimo, blu = massimo).</li>
+        <li>La card <b>occupa tutta la larghezza</b> che le dà la dashboard; lo slider in alto serve solo a simulare colonne diverse. Sotto i 420 px gli elementi si rimpiccioliscono un po'.</li>
+        <li>Da spento o non disponibile la barra non si trascina.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Da decidere</h3>
+      <ol>
+        <li>Con <code>hvac_mode: off</code> setpoint attenuato e bloccato. Ok o vuoi poterlo regolare anche da spento?</li>
+        <li>Preset (<code>comfort/sleep/away</code>): li aggiungo nello stato tipo "Scalda · Comfort" e nel menu modo?</li>
+        <li>Scala della barra: <code>min_temp</code>–<code>max_temp</code> dell'entità (pavimento 7–35 °C, il trascinamento è meno preciso) oppure una scala configurabile, es. <code>bar_min: 15</code> / <code>bar_max: 28</code>?</li>
+      </ol>
+    </section>
+    <section>
+      <h3>Chiamate servizio (simulate)</h3>
+      <div id="log"><div class="muted">— nessuna —</div></div>
+    </section>
+  </aside>
+</div>
+
+<div class="menu" id="menu" hidden></div>
+
+<script>
+const P = {
+  fire: "M12 3c.6 3 4.5 5 4.5 9.5a4.5 4.5 0 0 1-9 0c0-2 1-3.4 2-4.3.2 1.6 1 2.6 2 2.8-.3-2.7-.2-5.6.5-8z",
+  snow: "M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 3.5l3 2 3-2M9 20.5l3-2 3 2",
+  power: "M12 3v8M6.3 6.6a8 8 0 1 0 11.4 0",
+  drop: "M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5z",
+  heatcool: "M7 4v16M4 7l3-3 3 3M17 20V4M14 17l3 3 3-3",
+  auto: "M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4",
+  fan: "M12 10.5C11 6 12 3 15 3.5s1.5 5-3 7M13.5 12c4.5-1 7.5 0 7 3s-5 1.5-7-3M12 13.5c1 4.5 0 7.5-3 7s-1.5-5 3-7M10.5 12c-4.5 1-7.5 0-7-3s5-1.5 7 3",
+  idle: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5V12l3 2",
+  na: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5v5.5M12 16.5v.01",
+  thermo: "M10 13.5V5a2 2 0 0 1 4 0v8.5a4 4 0 1 1-4 0zM12 17v-6",
+  coil: "M4 7c2.5-2 5.5 2 8 0s5.5 2 8 0M4 12c2.5-2 5.5 2 8 0s5.5 2 8 0M4 17c2.5-2 5.5 2 8 0s5.5 2 8 0",
+  ac: "M3 5h18v8H3zM6 10h12M8 16.5l-1 3M12 16.5v3M16 16.5l1 3",
+  radiator: "M6 5v14M10 5v14M14 5v14M18 5v14M4 19h16M4 8h16",
+  check: "M5 12.5l4.5 4.5L19 7.5"
+};
+const ico = (n, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n]}"/></svg>`;
+
+const MODE = {
+  off: { l: "Spento", i: "power", c: "--disabled-color" },
+  heat: { l: "Riscaldamento", i: "fire", c: "--state-climate-heat-color" },
+  cool: { l: "Raffrescamento", i: "snow", c: "--state-climate-cool-color" },
+  heat_cool: { l: "Caldo/Freddo", i: "heatcool", c: "--state-climate-heat_cool-color" },
+  auto: { l: "Automatico", i: "auto", c: "--state-climate-auto-color" },
+  dry: { l: "Deumidifica", i: "drop", c: "--state-climate-dry-color" },
+  fan_only: { l: "Ventilazione", i: "fan", c: "--state-climate-fan_only-color" }
+};
+const ACTION = {
+  heating: { l: "Scalda", i: "fire", c: "--state-climate-heat-color", work: true },
+  cooling: { l: "Raffresca", i: "snow", c: "--state-climate-cool-color", work: true },
+  drying: { l: "Deumidifica", i: "drop", c: "--state-climate-dry-color", work: true },
+  fan: { l: "Ventila", i: "fan", c: "--state-climate-fan_only-color" },
+  idle: { l: "Inattivo", i: "idle", c: "--disabled-color" },
+  off: { l: "Spento", i: "power", c: "--disabled-color" }
+};
+
+const E = {
+  pav: { id: "climate.riscaldamento_pavimento", name: "Pavimento", icon: "coil", state: "heat", modes: ["off", "heat"], action: "heating", cur: 19.4, t: 21, step: .5, min: 7, max: 35 },
+  ac: { id: "climate.ac_19621004", name: "Soggiorno AC", icon: "ac", state: "cool", modes: ["off", "heat", "cool", "dry"], action: "cooling", cur: 26.3, t: 24, step: 1, min: 17, max: 30 },
+  bio: { id: "climate.bioclimatica", name: "Bioclimatica", icon: "ac", state: "off", modes: ["off", "heat", "cool", "dry"], action: "off", cur: 22.1, t: 23, step: 1, min: 17, max: 30 },
+  net: { id: "climate.ma_piece", name: "Ma pièce", icon: "thermo", state: "heat", modes: ["off", "heat", "auto"], action: "idle", cur: 20.2, t: 19.5, step: .5, min: 7, max: 30 },
+  hc: { id: "climate.esempio_heat_cool", name: "Studio (heat_cool)", icon: "thermo", state: "heat_cool", modes: ["off", "heat_cool", "heat", "cool"], action: "idle", cur: 22.6, lo: 20, hi: 24, sel: "lo", step: .5, min: 16, max: 30 },
+  alt: { id: "climate.altherma_leaving_water_temperature", name: "Altherma", icon: "radiator", state: "unavailable", modes: [], action: null, cur: null, t: null, step: .5, min: 25, max: 55 }
+};
+const CARDS = [
+  { title: "Riscaldamento", compact: false, rows: ["pav", "ac", "bio"] },
+  { title: "Altri stati", compact: false, rows: ["net", "hc", "alt"] },
+  { title: "compact: true", compact: true, rows: ["pav", "ac"] }
+];
+
+const fmt = (v, d) => v.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+const dec = e => (e.step < 1 ? 1 : 0);
+const cssv = n => `var(${n})`;
+const locked = e => e.state === "off" || e.state === "unavailable";
+
+function rowColor(e) {
+  if (e.state === "unavailable") return cssv("--disabled-color");
+  return cssv((ACTION[e.action] || MODE[e.state]).c);
+}
+
+function barInner(e, dragKey) {
+  let s = `<div class="track"></div>`;
+  if (e.state === "unavailable") return s;
+  const f = v => (Math.min(1, Math.max(0, (v - e.min) / (e.max - e.min))) * 100).toFixed(2);
+  const span = (a, b, cls) => `<div class="${cls}" style="left:${Math.min(f(a), f(b))}%;width:${Math.abs(f(a) - f(b))}%"></div>`;
+  const dot = (key, color) => `<div class="dot t${dragKey === key ? " active" : ""}" style="left:${f(e[key])}%${color ? `;--dot:${color}` : ""}"></div>`;
+  const work = ACTION[e.action] && ACTION[e.action].work;
+  if (e.state === "heat_cool") {
+    s += span(e.lo, e.hi, "range");
+    if (work) s += span(e.action === "heating" ? e.lo : e.hi, e.cur, "fill");
+    s += `<div class="dot c" style="left:${f(e.cur)}%"></div>`;
+    s += dot("lo", "var(--state-climate-heat-color)") + dot("hi", "var(--state-climate-cool-color)");
+  } else {
+    if (work) s += span(e.t, e.cur, "fill");
+    s += `<div class="dot c" style="left:${f(e.cur)}%"></div>`;
+    s += dot("t");
+  }
+  if (dragKey) s += `<div class="bubble" style="left:${f(e[dragKey])}%">${fmt(e[dragKey], dec(e))}°</div>`;
+  return s;
+}
+
+function scale(k, e) {
+  return `<div class="scale"><span>${fmt(e.min, 0)}°</span><div class="bar${locked(e) ? " locked" : ""}" data-k="${k}">${barInner(e)}</div><span>${fmt(e.max, 0)}°</span></div>`;
+}
+
+function setpoint(k, e, holding) {
+  const off = locked(e);
+  const pend = e.pending ? ` pending${holding ? " holding" : ""}` : "";
+  let v;
+  if (e.state === "unavailable") v = `<div class="tv dim">—</div>`;
+  else if (e.state === "heat_cool")
+    v = `<div class="tv dual${pend}"><span class="hi${e.sel === "hi" ? " on" : ""}" data-act="sel" data-k="${k}" data-w="hi">${fmt(e.hi, dec(e))}°</span><span class="lo${e.sel === "lo" ? " on" : ""}" data-act="sel" data-k="${k}" data-w="lo">${fmt(e.lo, dec(e))}°</span></div>`;
+  else v = `<div class="tv${off ? " dim" : ""}${pend}">${fmt(e.t, dec(e))}°</div>`;
+  const dis = off ? " disabled" : "";
+  return `<div class="sp"><button data-act="dec" data-k="${k}" aria-label="Diminuisci"${dis}>−</button>${v}<button data-act="inc" data-k="${k}" aria-label="Aumenta"${dis}>+</button></div>`;
+}
+
+function row(k) {
+  const e = E[k], na = e.state === "unavailable";
+  const st = na ? { l: "Non disponibile", i: "na" } : (ACTION[e.action] || MODE[e.state]);
+  const m = MODE[e.modePending || e.state] || { i: "na", c: "--disabled-color" };
+  return `<div class="row${na ? " unavailable" : ""}" style="--row-color:${rowColor(e)};--mode-color:${cssv(m.c)}">
+    <button class="badge" data-act="info" data-k="${k}" aria-label="Dettagli ${e.name}">${ico(e.icon)}</button>
+    <div class="info" data-act="info" data-k="${k}">
+      <div class="name">${e.name}</div>
+      <div class="status">${ico(st.i)}${st.l}</div>
+    </div>
+    <div class="cur">${na ? "—" : fmt(e.cur, 1)}<sup>°C</sup></div>
+    ${setpoint(k, e)}
+    <button class="mode${e.modePending ? " pending" : ""}" data-act="mode" data-k="${k}" aria-label="Modo"${na ? " disabled" : ""}>${ico(m.i)}</button>
+    ${scale(k, e)}
+  </div>`;
+}
+
+function render() {
+  document.getElementById("dash").innerHTML = CARDS.map(c =>
+    `<div class="card${c.compact ? " compact" : ""}"><h2>${c.title}</h2>${c.rows.map(row).join("")}</div>`).join("");
+}
+
+function sim(e) {
+  if (e.state === "off") e.action = "off";
+  else if (e.state === "heat") e.action = e.t > e.cur + .2 ? "heating" : "idle";
+  else if (e.state === "cool") e.action = e.t < e.cur - .2 ? "cooling" : "idle";
+  else if (e.state === "dry") e.action = "drying";
+  else if (e.state === "heat_cool") e.action = e.cur < e.lo ? "heating" : e.cur > e.hi ? "cooling" : "idle";
+  else e.action = "idle";
+}
+
+function log(txt) {
+  const el = document.getElementById("log");
+  if (el.querySelector(".muted")) el.innerHTML = "";
+  const d = document.createElement("div"); d.textContent = txt; el.prepend(d);
+}
+
+function setValue(e, key, v) {
+  v = Math.min(e.max, Math.max(e.min, Math.round(v * 10) / 10));
+  if (key === "lo") v = Math.min(v, e.hi - 1);
+  if (key === "hi") v = Math.max(v, e.lo + 1);
+  e[key] = v;
+}
+
+function schedule(e) {
+  e.pending = true;
+  clearTimeout(e.timer);
+  e.timer = setTimeout(() => {
+    e.pending = false; sim(e); render();
+    log(e.state === "heat_cool"
+      ? `climate.set_temperature ${e.id} target_temp_low=${e.lo} target_temp_high=${e.hi}`
+      : `climate.set_temperature ${e.id} temperature=${e.t}`);
+  }, 1500);
+  render();
+}
+
+function bump(e, dir) {
+  const key = e.state === "heat_cool" ? e.sel : "t";
+  setValue(e, key, e[key] + dir * e.step);
+  schedule(e);
+}
+
+function setMode(e, m) {
+  if (m === e.state) return;
+  e.modePending = m;
+  log(`climate.set_hvac_mode ${e.id} hvac_mode=${m}`);
+  render();
+  setTimeout(() => {
+    if (m === "heat_cool" && e.lo == null) { e.lo = (e.t ?? 21) - 2; e.hi = (e.t ?? 21) + 2; e.sel = "lo"; }
+    if (m !== "heat_cool" && e.t == null) e.t = e.lo;
+    e.state = m; e.modePending = null; sim(e); render();
+  }, 1200);
+}
+
+let drag = null;
+function valueAt(bar, x, e) {
+  const r = bar.getBoundingClientRect();
+  const raw = e.min + Math.min(1, Math.max(0, (x - r.left) / r.width)) * (e.max - e.min);
+  return e.min + Math.round((raw - e.min) / e.step) * e.step;
+}
+function dragTo(x) {
+  const { bar, e, key, k } = drag;
+  setValue(e, key, valueAt(bar, x, e));
+  bar.innerHTML = barInner(e, key);
+  bar.closest(".row").querySelector(".sp").outerHTML = setpoint(k, e, true);
+}
+document.addEventListener("pointerdown", ev => {
+  const bar = ev.target.closest(".bar");
+  if (!bar) return;
+  const k = bar.dataset.k, e = E[k];
+  if (!e || locked(e)) return;
+  ev.preventDefault();
+  clearTimeout(e.timer);
+  e.pending = true;
+  let key = "t";
+  if (e.state === "heat_cool") {
+    const v = valueAt(bar, ev.clientX, e);
+    key = Math.abs(v - e.lo) <= Math.abs(v - e.hi) ? "lo" : "hi";
+    e.sel = key;
+  }
+  drag = { bar, e, key, k };
+  bar.setPointerCapture(ev.pointerId);
+  dragTo(ev.clientX);
+});
+document.addEventListener("pointermove", ev => { if (drag) dragTo(ev.clientX); });
+const endDrag = () => { if (!drag) return; const e = drag.e; drag = null; schedule(e); };
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", endDrag);
+
+const menu = document.getElementById("menu");
+function openMenu(k, btn) {
+  const e = E[k];
+  menu.innerHTML = e.modes.map(m => `<button class="${m === e.state ? "on" : ""}" style="--c:${cssv(MODE[m].c)}" data-act="setmode" data-k="${k}" data-m="${m}">${ico(MODE[m].i)}${MODE[m].l}${m === e.state ? ico("check", "chk") : ""}</button>`).join("");
+  menu.hidden = false;
+  const r = btn.getBoundingClientRect(), mh = menu.offsetHeight, mw = menu.offsetWidth;
+  const top = r.bottom + 6 + mh > innerHeight ? r.top - mh - 6 : r.bottom + 6;
+  menu.style.top = `${Math.max(8, top)}px`;
+  menu.style.left = `${Math.max(8, Math.min(innerWidth - mw - 8, r.right - mw))}px`;
+}
+
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("[data-act],[data-theme-set]");
+  if (!t || t.dataset.act !== "mode") { if (!ev.target.closest("#menu")) menu.hidden = true; }
+  if (!t) return;
+  if (t.dataset.themeSet) {
+    document.documentElement.dataset.theme = t.dataset.themeSet;
+    document.querySelectorAll("[data-theme-set]").forEach(b => b.classList.toggle("on", b === t));
+    return;
+  }
+  const e = E[t.dataset.k];
+  if (!e || e.state === "unavailable") return;
+  switch (t.dataset.act) {
+    case "inc": bump(e, 1); break;
+    case "dec": bump(e, -1); break;
+    case "sel": e.sel = t.dataset.w; render(); break;
+    case "info": log(`more-info → ${e.id}`); break;
+    case "mode": if (menu.hidden && !e.modePending) openMenu(t.dataset.k, t); else menu.hidden = true; break;
+    case "setmode": menu.hidden = true; setMode(e, t.dataset.m); break;
+  }
+});
+document.addEventListener("keydown", ev => { if (ev.key === "Escape") menu.hidden = true; });
+
+const w = document.getElementById("w"), wv = document.getElementById("wv");
+w.addEventListener("input", () => {
+  document.getElementById("dash").style.setProperty("--w", `${w.value}px`);
+  wv.textContent = `${w.value} px`;
+});
+
+render();
+</script>
+</body>
+</html>
