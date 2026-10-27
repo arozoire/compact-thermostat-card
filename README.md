@@ -118,8 +118,9 @@ entities:
 
 ## Dashboard a sezioni
 
-La card implementa `getGridOptions()`: larghezza predefinita 12 colonne, altezza calcolata dal numero di righe
-(e dal titolo). Se le dai più spazio, le righe si allargano in modo uniforme. La larghezza la decide la dashboard;
+La card implementa `getGridOptions()`: larghezza predefinita 12 colonne e altezza `auto`, cioè si adatta al numero
+di righe (e al titolo) qualunque siano il tema e i font. Se imposti a mano un'altezza maggiore, le righe si allargano
+in modo uniforme. Serve Home Assistant 2024.11 o successivo. La larghezza la decide la dashboard;
 sotto i 420 px la card riduce un po' badge, pulsanti e testo.
 
 ## Sviluppo

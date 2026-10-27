@@ -116,8 +116,7 @@ export class CompactThermostatCard extends LitElement {
   }
 
   getGridOptions() {
-    const rows = Math.ceil((this._height + 8) / 64);
-    return { columns: 12, rows, min_columns: 6, min_rows: rows };
+    return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   override connectedCallback() {

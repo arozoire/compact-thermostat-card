@@ -3,5 +3,5 @@
   "filename": "compact-thermostat-card.js",
   "content_in_root": false,
   "render_readme": true,
-  "homeassistant": "2024.8.0"
+  "homeassistant": "2024.11.0"
 }
